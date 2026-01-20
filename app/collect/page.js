@@ -13,8 +13,31 @@ export default function CollectPage() {
     const [loadingData, setLoadingData] = useState(true);
     const [error, setError] = useState('');
 
+    const handleDelete = async (id) => {
+        if (!confirm('Are you sure you want to delete this location?')) return;
+
+        try {
+            const res = await fetch('/api/location', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id }),
+            });
+
+            if (res.ok) {
+                setLocations(prev => prev.filter(item => item._id !== id));
+            } else {
+                alert('Failed to delete location');
+            }
+        } catch (error) {
+            console.error('Error deleting location:', error);
+            alert('An error occurred while deleting');
+        }
+    };
+
     useEffect(() => {
-        if (status === 'authenticated' && session?.user?.role === 'driver') {
+        if (status === 'authenticated' && (session?.user?.role === 'driver' || session?.user?.role === 'cleaner')) {
             const fetchLocations = async () => {
                 try {
                     const res = await fetch('/api/location');
@@ -77,8 +100,8 @@ export default function CollectPage() {
         );
     }
 
-    // Role check: Only drivers can access this page
-    if (session?.user?.role !== 'driver') {
+    // Role check: Only drivers and cleaners can access this page
+    if (session?.user?.role !== 'driver' && session?.user?.role !== 'cleaner') {
         return (
             <div className={styles.container}>
                 <div className={styles.card} style={{
@@ -93,7 +116,7 @@ export default function CollectPage() {
                         Access <span>Denied</span>
                     </h1>
                     <p style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#666' }}>
-                        This page is restricted to Drivers only. <br />
+                        This page is restricted to Drivers and Cleaners only. <br />
                         It seems this is not your purpose.
                     </p>
                     <Link
@@ -149,26 +172,34 @@ export default function CollectPage() {
                                 </div>
                             </div>
 
-                            <Link
-                                href={`https://www.google.com/maps/search/?api=1&query=${item.geolocation.latitude},${item.geolocation.longitude}`}
-                                target="_blank"
-                                className={styles.locationBtn}
-                            >
-                                <svg
-                                    className={styles.icon}
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                <Link
+                                    href={`https://www.google.com/maps/search/?api=1&query=${item.geolocation.latitude},${item.geolocation.longitude}`}
+                                    target="_blank"
+                                    className={styles.locationBtn}
+                                    style={{ flex: 1, textAlign: 'center' }}
                                 >
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                    <circle cx="12" cy="10" r="3"></circle>
-                                </svg>
-                                View Location
-                            </Link>
+                                    View
+                                </Link>
+                                {session?.user?.role === 'cleaner' && (
+                                    <>
+                                        <Link
+                                            href={`/add?edit=true&id=${item._id}&street=${encodeURIComponent(item.address)}&city=${encodeURIComponent(item.city)}&pincode=${item.pincode}&lat=${item.geolocation.latitude}&lng=${item.geolocation.longitude}`}
+                                            className={styles.locationBtn}
+                                            style={{ background: '#f59e0b', border: 'none', color: 'white', cursor: 'pointer', padding: '0.8rem 1rem', textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            Edit
+                                        </Link>
+                                        <button
+                                            className={styles.locationBtn}
+                                            style={{ background: '#ef4444', border: 'none', color: 'white', cursor: 'pointer', padding: '0.5rem 1rem' }}
+                                            onClick={() => handleDelete(item._id)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>

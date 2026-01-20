@@ -2,22 +2,30 @@
 
 import { useState } from 'react';
 import Link from 'next/link'; // Added Link import
+import { useSearchParams, useRouter } from 'next/navigation'; // Added formatting params imports
 import { useSession } from 'next-auth/react'; // Added useSession import
 import styles from './add.module.css';
 
 export default function AddLocationPage() {
     const { data: session, status } = useSession(); // Added session hook
+    const searchParams = useSearchParams();
+    const router = useRouter(); // For redirecting after edit
+
+    // Check if we are in edit mode
+    const isEditMode = searchParams.get('edit') === 'true';
+    const editId = searchParams.get('id');
+
     const [loadingLocation, setLoadingLocation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false); // New state for form submission
     const [submitMessage, setSubmitMessage] = useState({ type: '', text: '' }); // New state for feedback
     const [locationError, setLocationError] = useState('');
     const [formData, setFormData] = useState({
-        street: '',
-        city: '',
+        street: searchParams.get('street') || '',
+        city: searchParams.get('city') || '',
         state: '',
-        pincode: '',
-        latitude: '',
-        longitude: ''
+        pincode: searchParams.get('pincode') || '',
+        latitude: searchParams.get('lat') || '',
+        longitude: searchParams.get('lng') || ''
     });
 
     const handleChange = (e) => {
@@ -73,33 +81,49 @@ export default function AddLocationPage() {
         setSubmitMessage({ type: '', text: '' });
 
         try {
-            const res = await fetch('/api/location', {
-                method: 'POST',
+            const endpoint = '/api/location';
+            const method = isEditMode ? 'PUT' : 'POST';
+            const bodyData = {
+                address: formData.street,
+                city: formData.city,
+                pincode: formData.pincode,
+                latitude: formData.latitude,
+                longitude: formData.longitude,
+            };
+
+            if (isEditMode) {
+                bodyData.id = editId;
+            }
+
+            const res = await fetch(endpoint, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    address: formData.street,
-                    city: formData.city,
-                    pincode: formData.pincode,
-                    latitude: formData.latitude,
-                    longitude: formData.longitude,
-                }),
+                body: JSON.stringify(bodyData),
             });
 
             const data = await res.json();
 
             if (res.ok) {
-                setSubmitMessage({ type: 'success', text: 'Location added successfully!' });
-                // Reset form
-                setFormData({
-                    street: '',
-                    city: '',
-                    state: '',
-                    pincode: '',
-                    latitude: '',
-                    longitude: ''
-                });
+                setSubmitMessage({ type: 'success', text: isEditMode ? 'Location updated successfully!' : 'Location added successfully!' });
+
+                if (isEditMode) {
+                    // Redirect back to collect page after short delay? Or just show msg
+                    setTimeout(() => {
+                        router.push('/collect');
+                    }, 1500);
+                } else {
+                    // Reset form
+                    setFormData({
+                        street: '',
+                        city: '',
+                        state: '',
+                        pincode: '',
+                        latitude: '',
+                        longitude: ''
+                    });
+                }
             } else {
                 setSubmitMessage({ type: 'error', text: data.message || 'Failed to add location' });
             }
@@ -155,7 +179,7 @@ export default function AddLocationPage() {
         <div className={styles.container}>
             <div className={styles.card}>
                 <h1 className={styles.title}>
-                    Add <span>Location</span>
+                    {isEditMode ? 'Edit' : 'Add'} <span>Location</span>
                 </h1>
 
                 <form className={styles.form} onSubmit={handleSubmit}>
@@ -263,7 +287,7 @@ export default function AddLocationPage() {
                     </div>
 
                     <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-                        {isSubmitting ? 'Registering...' : 'Register Location'}
+                        {isSubmitting ? (isEditMode ? 'Updating...' : 'Registering...') : (isEditMode ? 'Update Location' : 'Register Location')}
                     </button>
                 </form>
             </div>

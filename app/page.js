@@ -25,9 +25,14 @@ export default function Home() {
           {status === 'authenticated' ? (
             <>
               {session?.user?.role === 'cleaner' && (
-                <Link href="/add" className={styles.navBtn}>
-                  Add Location
-                </Link>
+                <>
+                  <Link href="/add" className={styles.navBtn}>
+                    Add Location
+                  </Link>
+                  <Link href="/collect" className={styles.navBtn}>
+                    Collection Points
+                  </Link>
+                </>
               )}
               {session?.user?.role === 'driver' && (
                 <Link href="/collect" className={styles.navBtn}>
@@ -93,9 +98,14 @@ export default function Home() {
           {status === 'authenticated' ? (
             <>
               {session?.user?.role === 'cleaner' && (
-                <Link href="/add" className={styles.sidebarLink} onClick={toggleSidebar}>
-                  Add Location
-                </Link>
+                <>
+                  <Link href="/add" className={styles.sidebarLink} onClick={toggleSidebar}>
+                    Add Location
+                  </Link>
+                  <Link href="/collect" className={styles.sidebarLink} onClick={toggleSidebar}>
+                    Collection Points
+                  </Link>
+                </>
               )}
               {session?.user?.role === 'driver' && (
                 <Link href="/collect" className={styles.sidebarLink} onClick={toggleSidebar}>
@@ -138,9 +148,14 @@ export default function Home() {
         <div className={styles.heroButtons}>
           {status === 'authenticated' ? (
             session?.user?.role === 'cleaner' ? (
-              <Link href="/add" className={`${styles.ctaBtn} ${styles.ctaBtnPrimary}`}>
-                Register Location
-              </Link>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <Link href="/add" className={`${styles.ctaBtn} ${styles.ctaBtnPrimary}`}>
+                  Register Location
+                </Link>
+                <Link href="/collect" className={`${styles.ctaBtn} ${styles.ctaBtnSecondary}`}>
+                  View Points
+                </Link>
+              </div>
             ) : (
               <Link href="/collect" className={`${styles.ctaBtn} ${styles.ctaBtnPrimary}`}>
                 View Collection Points

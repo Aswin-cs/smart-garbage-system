@@ -34,3 +34,54 @@ export async function GET() {
         return NextResponse.json({ message: "Internal server error" }, { status: 500 });
     }
 }
+
+export async function DELETE(request) {
+    try {
+        await connectDb();
+        const { id } = await request.json();
+
+        if (!id) {
+            return NextResponse.json({ message: "Location ID required" }, { status: 400 });
+        }
+
+        await Location.findByIdAndDelete(id);
+        return NextResponse.json({ message: "Location deleted successfully" }, { status: 200 });
+    } catch (error) {
+        console.log(error);
+        return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    }
+}
+
+export async function PUT(request) {
+    try {
+        await connectDb();
+        // Updated to use search params if ID isn't in body using new URL(request.url).searchParams but standard JSON body is better for PUT
+        const body = await request.json();
+        const { id, address, city, pincode, latitude, longitude } = body;
+
+        if (!id) {
+            return NextResponse.json({ message: "Location ID required" }, { status: 400 });
+        }
+
+        const updatedLocation = await Location.findByIdAndUpdate(
+            id,
+            {
+                address,
+                city,
+                pincode,
+                geolocation: { latitude, longitude }
+            },
+            { new: true }
+        );
+
+        if (!updatedLocation) {
+            return NextResponse.json({ message: "Location not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({ message: "Location updated successfully", location: updatedLocation }, { status: 200 });
+
+    } catch (error) {
+        console.log(error);
+        return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    }
+}
