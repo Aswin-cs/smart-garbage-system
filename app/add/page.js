@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link'; // Added Link import
 import { useSearchParams, useRouter } from 'next/navigation'; // Added formatting params imports
 import { useSession } from 'next-auth/react'; // Added useSession import
 import styles from './add.module.css';
 
-export default function AddLocationPage() {
+// Separate the content that uses searchParams into its own component
+function AddLocationContent() {
     const { data: session, status } = useSession(); // Added session hook
     const searchParams = useSearchParams();
     const router = useRouter(); // For redirecting after edit
@@ -299,5 +300,15 @@ export default function AddLocationPage() {
                 </form>
             </div>
         </div>
+    );
+
+}
+
+// Main page component wrapped in Suspense
+export default function AddLocationPage() {
+    return (
+        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>Loading...</div>}>
+            <AddLocationContent />
+        </Suspense>
     );
 }
