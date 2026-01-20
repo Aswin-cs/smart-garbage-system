@@ -1,10 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link'; // Added Link import
+import { useSession } from 'next-auth/react'; // Added useSession import
 import styles from './add.module.css';
 
 export default function AddLocationPage() {
+    const { data: session, status } = useSession(); // Added session hook
     const [loadingLocation, setLoadingLocation] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false); // New state for form submission
+    const [submitMessage, setSubmitMessage] = useState({ type: '', text: '' }); // New state for feedback
     const [locationError, setLocationError] = useState('');
     const [formData, setFormData] = useState({
         street: '',
@@ -62,11 +67,89 @@ export default function AddLocationPage() {
         );
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Form submitted:', formData);
-        alert('Location Added Successfully (Check console for data)');
+        setIsSubmitting(true);
+        setSubmitMessage({ type: '', text: '' });
+
+        try {
+            const res = await fetch('/api/location', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    address: formData.street,
+                    city: formData.city,
+                    pincode: formData.pincode,
+                    latitude: formData.latitude,
+                    longitude: formData.longitude,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setSubmitMessage({ type: 'success', text: 'Location added successfully!' });
+                // Reset form
+                setFormData({
+                    street: '',
+                    city: '',
+                    state: '',
+                    pincode: '',
+                    latitude: '',
+                    longitude: ''
+                });
+            } else {
+                setSubmitMessage({ type: 'error', text: data.message || 'Failed to add location' });
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            setSubmitMessage({ type: 'error', text: 'An unexpected error occurred' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
+
+
+
+    if (status === 'loading') {
+        return <div className={styles.container}><p>Loading...</p></div>;
+    }
+
+    if (status === 'unauthenticated') {
+        return (
+            <div className={styles.container}>
+                <div className={styles.card}>
+                    <h1 className={styles.title}>Authentication Required</h1>
+                    <p style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                        You must be logged in to access this page.
+                    </p>
+                    <Link href="/login" className={styles.submitButton} style={{ textAlign: 'center', display: 'block', textDecoration: 'none' }}>
+                        Go to Login
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    // Role check: Only cleaners can access this page
+    if (session?.user?.role !== 'cleaner') {
+        return (
+            <div className={styles.container}>
+                <div className={styles.card}>
+                    <h1 className={styles.title} style={{ color: '#ef4444' }}>Access Denied</h1>
+                    <p style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                        This page is restricted to Cleaners only. <br />
+                        It seems this is not your purpose.
+                    </p>
+                    <Link href="/" className={styles.submitButton} style={{ textAlign: 'center', display: 'block', textDecoration: 'none', background: '#ef4444' }}>
+                        Return Home
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.container}>
@@ -76,6 +159,20 @@ export default function AddLocationPage() {
                 </h1>
 
                 <form className={styles.form} onSubmit={handleSubmit}>
+
+                    {submitMessage.text && (
+                        <div style={{
+                            padding: '10px',
+                            marginBottom: '15px',
+                            borderRadius: '4px',
+                            textAlign: 'center',
+                            backgroundColor: submitMessage.type === 'success' ? '#dcfce7' : '#fee2e2',
+                            color: submitMessage.type === 'success' ? '#166534' : '#991b1b',
+                            border: `1px solid ${submitMessage.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+                        }}>
+                            {submitMessage.text}
+                        </div>
+                    )}
 
                     <div className={styles.inputGroup}>
                         <label htmlFor="street" className={styles.label}>Street Address</label>
@@ -165,8 +262,8 @@ export default function AddLocationPage() {
                         </div>
                     </div>
 
-                    <button type="submit" className={styles.submitButton}>
-                        Register Location
+                    <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+                        {isSubmitting ? 'Registering...' : 'Register Location'}
                     </button>
                 </form>
             </div>

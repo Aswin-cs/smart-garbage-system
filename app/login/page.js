@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import styles from './login.module.css';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+    const router = useRouter();
+    const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
-        userId: '',
         userId: '',
         password: '',
         role: 'cleaner' // Default role
@@ -24,11 +27,27 @@ export default function LoginPage() {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Login attempt:', formData);
-        // Add authentication logic here
-        alert('Login Clicked (Check console for data)');
+        setError('');
+
+        try {
+            const result = await signIn('credentials', {
+                userId: formData.userId,
+                password: formData.password,
+                role: formData.role,
+                redirect: false
+            });
+
+            if (result.error) {
+                setError("Invalid credentials");
+                return;
+            }
+
+            router.push('/');
+        } catch (error) {
+            setError("Something went wrong");
+        }
     };
 
     return (
@@ -37,6 +56,8 @@ export default function LoginPage() {
                 <h1 className={styles.title}>
                     Welcome <span>Back</span>
                 </h1>
+
+                {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '1rem' }}>{error}</div>}
 
                 <div className={styles.roleSelector}>
                     <button

@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import styles from "./page.module.css";
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -20,15 +22,42 @@ export default function Home() {
 
         {/* Desktop Links */}
         <div className={styles.navLinks}>
-          <Link href="/add" className={styles.navBtn}>
-            Add Location
-          </Link>
-          <Link href="/collect" className={styles.navBtn}>
-            Collection Points
-          </Link>
-          <Link href="/login" className={`${styles.navBtn} ${styles.navBtnPrimary}`}>
-            Login
-          </Link>
+          {status === 'authenticated' ? (
+            <>
+              {session?.user?.role === 'cleaner' && (
+                <Link href="/add" className={styles.navBtn}>
+                  Add Location
+                </Link>
+              )}
+              {session?.user?.role === 'driver' && (
+                <Link href="/collect" className={styles.navBtn}>
+                  Collection Points
+                </Link>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '0.9rem', color: '#666' }}>Hi, {session?.user?.name || 'User'}</span>
+                <button
+                  onClick={() => signOut()}
+                  className={`${styles.navBtn} ${styles.navBtnPrimary}`}
+                  style={{ cursor: 'pointer', border: 'none' }}
+                >
+                  Logout
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link href="/add" className={styles.navBtn}>
+                Add Location
+              </Link>
+              <Link href="/collect" className={styles.navBtn}>
+                Collection Points
+              </Link>
+              <Link href="/login" className={`${styles.navBtn} ${styles.navBtnPrimary}`}>
+                Login
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Toggle Button */}
@@ -61,15 +90,42 @@ export default function Home() {
         </div>
 
         <div className={styles.sidebarLinks}>
-          <Link href="/add" className={styles.sidebarLink} onClick={toggleSidebar}>
-            Add Location
-          </Link>
-          <Link href="/collect" className={styles.sidebarLink} onClick={toggleSidebar}>
-            Collection Points
-          </Link>
-          <Link href="/login" className={styles.sidebarLink} onClick={toggleSidebar}>
-            Login
-          </Link>
+          {status === 'authenticated' ? (
+            <>
+              {session?.user?.role === 'cleaner' && (
+                <Link href="/add" className={styles.sidebarLink} onClick={toggleSidebar}>
+                  Add Location
+                </Link>
+              )}
+              {session?.user?.role === 'driver' && (
+                <Link href="/collect" className={styles.sidebarLink} onClick={toggleSidebar}>
+                  Collection Points
+                </Link>
+              )}
+              <button
+                onClick={() => {
+                  toggleSidebar();
+                  signOut();
+                }}
+                className={styles.sidebarLink}
+                style={{ cursor: 'pointer' }}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/add" className={styles.sidebarLink} onClick={toggleSidebar}>
+                Add Location
+              </Link>
+              <Link href="/collect" className={styles.sidebarLink} onClick={toggleSidebar}>
+                Collection Points
+              </Link>
+              <Link href="/login" className={styles.sidebarLink} onClick={toggleSidebar}>
+                Login
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -80,12 +136,26 @@ export default function Home() {
         </p>
 
         <div className={styles.heroButtons}>
-          <Link href="/login" className={`${styles.ctaBtn} ${styles.ctaBtnPrimary}`}>
-            Get Started
-          </Link>
-          <Link href="/collect" className={`${styles.ctaBtn} ${styles.ctaBtnSecondary}`}>
-            View Map
-          </Link>
+          {status === 'authenticated' ? (
+            session?.user?.role === 'cleaner' ? (
+              <Link href="/add" className={`${styles.ctaBtn} ${styles.ctaBtnPrimary}`}>
+                Register Location
+              </Link>
+            ) : (
+              <Link href="/collect" className={`${styles.ctaBtn} ${styles.ctaBtnPrimary}`}>
+                View Collection Points
+              </Link>
+            )
+          ) : (
+            <>
+              <Link href="/login" className={`${styles.ctaBtn} ${styles.ctaBtnPrimary}`}>
+                Get Started
+              </Link>
+              <Link href="/collect" className={`${styles.ctaBtn} ${styles.ctaBtnSecondary}`}>
+                View Map
+              </Link>
+            </>
+          )}
         </div>
       </main>
     </div>
