@@ -287,7 +287,14 @@ export default function AddLocationPage() {
                     </div>
 
                     <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-                        {isSubmitting ? (isEditMode ? 'Updating...' : 'Registering...') : (isEditMode ? 'Update Location' : 'Register Location')}
+                        {isSubmitting ? (
+                            <>
+                                <span className={styles.spinner}></span>
+                                <span style={{ marginLeft: '10px' }}>{isEditMode ? 'Updating...' : 'Registering...'}</span>
+                            </>
+                        ) : (
+                            isEditMode ? 'Update Location' : 'Register Location'
+                        )}
                     </button>
                 </form>
             </div>
